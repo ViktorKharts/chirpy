@@ -1,7 +1,31 @@
 package main
 
-import "fmt"
+import (
+	"net/http"
+)
 
 func main() {
-	fmt.Println("Hello from Chirpy")
+	mux := http.NewServeMux()
+	corsMux := middlewareCors(mux)
+
+	s := http.Server{
+		Addr: ":8080",
+		Handler: corsMux,
+	}
+
+	s.ListenAndServe()
 }
+
+func middlewareCors(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "*")
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+	
