@@ -10,6 +10,9 @@ const port = ":8080"
 
 func main() {
 	mux := http.NewServeMux()
+
+	mux.Handle("/", http.FileServer(http.Dir("./public")))
+
 	corsMux := middlewareCors(mux)
 
 	s := http.Server{
