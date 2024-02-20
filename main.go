@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"slices"
+	"strings"
 
 	"github.com/go-chi/chi"
 )
@@ -48,7 +50,7 @@ func validateChirpHandler(w http.ResponseWriter, r *http.Request) {
     	}
 
 	type validResponse struct {
-		Valid bool`json:"valid"`
+		CleanedBody string `json:"cleaned_body"`
 	}
 
     	decoder := json.NewDecoder(r.Body)
@@ -66,7 +68,7 @@ func validateChirpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJson(w, http.StatusOK, validResponse{
-		Valid: true,
+		CleanedBody: cleanBody(params.Body),
 	})
 }
 
@@ -90,5 +92,16 @@ func respondWithJson(w http.ResponseWriter, s int, p interface{}) {
 	}
 	w.WriteHeader(s)
 	w.Write(j)
+}
+
+func cleanBody(ds string) (cs string) {	
+	dw := []string{"kerfuffle", "sharbert", "fornax"}
+	s := strings.Split(ds, " ")
+	for i, v := range s {
+		if slices.Contains[[]string, string](dw, strings.ToLower(v)) {
+			s[i] = "****"
+		}
+	}
+	return strings.Join(s, " ")
 }
 	
