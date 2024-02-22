@@ -66,6 +66,20 @@ func (db *DB) GetChirps() ([]Chirp, error) {
 	return chirps, nil
 }
 
+func (db *DB) GetChirp(id int) (Chirp, error) {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return Chirp{}, err
+	}
+
+	chirp, ok := dbStructure.Chirps[id]
+	if !ok {
+		return Chirp{}, os.ErrNotExist
+	}
+
+	return chirp, nil
+}
+
 func (db *DB) ensureDB() error {
 	_, err := os.ReadFile(db.path)
 	if errors.Is(err, os.ErrNotExist) {
