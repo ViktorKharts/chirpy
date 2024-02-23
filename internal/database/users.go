@@ -5,9 +5,10 @@ import "os"
 type User struct {
 	ID int `json:"id"`
 	Email string `json:"email"`
+	Password string `json:"password"`
 }
 
-func (db *DB) CreateUser(email string) (User, error) {
+func (db *DB) CreateUser(email, password string) (User, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return User{}, err
@@ -17,6 +18,13 @@ func (db *DB) CreateUser(email string) (User, error) {
 	user := User{
 		ID: id,
 		Email: email,
+		Password: password,
+	}
+
+	for _, u := range dbStructure.Users {
+		if u.Email == user.Email {
+			return User{}, os.ErrExist
+		}
 	}
 	
 	dbStructure.Users[id] = user
@@ -43,13 +51,21 @@ func (db *DB) GetUsers() ([]User, error) {
 	return users, nil
 } 
 
-func (db *DB) GetUser(id int) (User, error) {
+func (db *DB) GetUser(email string) (User, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return User{}, err
 	}
 
-	user, ok := dbStructure.Users[id]	
+	user := User{}
+	for _, u := range dbStructure.Users {
+		if u.Email == email {
+			user = u
+			break
+		}
+	}
+
+	user, ok := dbStructure.Users[user.ID]	
 	if !ok {
 		return User{}, os.ErrNotExist 
 	}

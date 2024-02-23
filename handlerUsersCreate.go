@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
@@ -13,6 +15,7 @@ type User struct {
 func (c *apiConfig) createUsersHandler(w http.ResponseWriter, r *http.Request) {
 	type requestPayload struct {
 		Email string `json:"email"`
+		Password string `json:"password"`
 	}
 
     	decoder := json.NewDecoder(r.Body)
@@ -23,7 +26,13 @@ func (c *apiConfig) createUsersHandler(w http.ResponseWriter, r *http.Request) {
 		return
     	}
 
-	user, err := c.DB.CreateUser(params.Email)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(params.Password), 8)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	} 
+
+	user, err := c.DB.CreateUser(params.Email, string(hashedPassword))
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return

@@ -33,6 +33,7 @@ func main() {
 	apiRouter := chi.NewRouter()
 	apiRouter.Get("/healthz", readinessHandler)
 	apiRouter.Get("/reset", cfg.resetMetricsHandler)
+	apiRouter.Post("/login", cfg.loginHandler)
 
 	// /api/chirps
 	apiRouter.Get("/chirps", cfg.getChirpsHandler)
