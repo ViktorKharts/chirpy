@@ -14,11 +14,7 @@ type DB struct {
 
 type DBStructure struct {
 	Chirps map[int]Chirp `json:"chirps"`
-}
-
-type Chirp struct {
-	ID   int	`json:"id"`	
-	Body string	`json:"body"`
+	Users  map[int]User `json:"users"`
 }
 
 func NewDB(path string) (*DB, error) {
@@ -28,56 +24,6 @@ func NewDB(path string) (*DB, error) {
 	} 
 	err := db.ensureDB()
 	return db, err
-}
-
-func (db *DB) CreateChirp(body string) (Chirp, error) {
-	dbStructure, err := db.loadDB()	
-	if err != nil {
-		return Chirp{}, err
-	}
-
-	id := len(dbStructure.Chirps) + 1
-	chirp := Chirp{
-		ID: id,
-		Body: body,
-	}
-	dbStructure.Chirps[id] = chirp
-
-	err = db.writeDB(dbStructure)
-	if err != nil {
-		return Chirp{}, err
-	}
-
-	return chirp, nil
-}
-
-func (db *DB) GetChirps() ([]Chirp, error) {
-	chirps := []Chirp{}
-
-	dbStructure, err := db.loadDB()	
-	if err != nil {
-		return chirps, err
-	}
-
-	for _, c := range dbStructure.Chirps {
-		chirps = append(chirps, c)
-	}
-
-	return chirps, nil
-}
-
-func (db *DB) GetChirp(id int) (Chirp, error) {
-	dbStructure, err := db.loadDB()
-	if err != nil {
-		return Chirp{}, err
-	}
-
-	chirp, ok := dbStructure.Chirps[id]
-	if !ok {
-		return Chirp{}, os.ErrNotExist
-	}
-
-	return chirp, nil
 }
 
 func (db *DB) ensureDB() error {
@@ -91,6 +37,7 @@ func (db *DB) ensureDB() error {
 func (db *DB) createDB() error {
 	dbStructure := DBStructure{
 		Chirps: map[int]Chirp{},
+		Users: map[int]User{},
 	}
 	return db.writeDB(dbStructure)
 }

@@ -29,13 +29,20 @@ func main() {
 	r.Handle("/app", fsHandler)
 	r.Handle("/app/*", fsHandler)
 
+	// /api 
 	apiRouter := chi.NewRouter()
 	apiRouter.Get("/healthz", readinessHandler)
 	apiRouter.Get("/reset", cfg.resetMetricsHandler)
+
+	// /api/chirps
 	apiRouter.Get("/chirps", cfg.getChirpsHandler)
 	apiRouter.Get("/chirps/{chirpID}", cfg.getChirpHandler)
 	apiRouter.Post("/chirps", cfg.createChirpsHandler)
+	
+	// /api/users
+	apiRouter.Post("/users", cfg.createUsersHandler)
 
+	// /admin
 	adminRouter := chi.NewRouter()
 	adminRouter.Get("/metrics", cfg.metricsHandler)
 
