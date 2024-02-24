@@ -5,14 +5,24 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/ViktorKharts/chirpy/internal/database"
 	"github.com/go-chi/chi"
+	"github.com/joho/godotenv"
 )
 
-const port = ":8080"
+const (
+	PORT = ":8080"
+	JWT_SECRET = "JWT_SECRET"
+)
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	db, err := database.NewDB("database.json")
 	if err != nil {
 		log.Fatal(err)
@@ -21,6 +31,7 @@ func main() {
 	cfg := apiConfig{
 		fileserverHits: 0,
 		DB:		*db,	
+		jwtSecret:	os.Getenv(JWT_SECRET),
 	}
 	r := chi.NewRouter()
 
@@ -42,6 +53,7 @@ func main() {
 	
 	// /api/users
 	apiRouter.Post("/users", cfg.createUsersHandler)
+	apiRouter.Put("/users", cfg.updateUsersHandler)
 
 	// /admin
 	adminRouter := chi.NewRouter()
@@ -53,11 +65,11 @@ func main() {
 	corsMux := middlewareCors(r)
 
 	s := http.Server{
-		Addr:	 port,
+		Addr:	 PORT,
 		Handler: corsMux,
 	}
 
-	fmt.Printf("Server started on port%s", port)
+	fmt.Printf("Server started on port%s", PORT)
 	log.Fatal(s.ListenAndServe())
 }
 
