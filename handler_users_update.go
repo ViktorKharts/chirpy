@@ -2,8 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"strconv"
 	"net/http"
+	"strconv"
+
 	"github.com/ViktorKharts/chirpy/internal/auth"
 )
 
@@ -19,9 +20,26 @@ func (c *apiConfig) updateUsersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId, err := auth.ValidateJWToken(t)
+	validatedToken, err := auth.ValidateJWToken(t)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	issuer, err := validatedToken.GetIssuer()
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't get data from token")
+		return
+	}
+
+	userId, err := validatedToken.GetSubject()
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't get data from token")
+		return
+	}
+
+	if issuer == auth.REFRESH_JWT_ISSUER {
+		respondWithError(w, http.StatusUnauthorized, "Wrong JSON Web Token provided")
 		return
 	}
 

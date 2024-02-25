@@ -16,7 +16,8 @@ func (c *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	type loginResponse struct {
 		User
-		Token string `json:"token"`
+		AccessToken string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 	}
 
 	params := loginPayload{}
@@ -34,7 +35,13 @@ func (c *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	signedToken, err := auth.GenerateJWToken(c.jwtSecret, params.ExpiresIn, user.ID)
+	signedAccessToken, err := auth.GenerateJWToken(c.jwtSecret, auth.ACCESS_JWT_ISSUER, user.ID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	signedRefreshToken, err := auth.GenerateJWToken(c.jwtSecret, auth.REFRESH_JWT_ISSUER, user.ID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -45,7 +52,8 @@ func (c *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 			ID: user.ID,
 			Email: user.Email,
 		},
-		Token: signedToken,
+		AccessToken: signedAccessToken,
+		RefreshToken: signedRefreshToken,
 	})
 }
 

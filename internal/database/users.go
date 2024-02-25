@@ -6,6 +6,7 @@ type User struct {
 	ID int `json:"id"`
 	Email string `json:"email"`
 	Password string `json:"password"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 func (db *DB) CreateUser(email, password string) (User, error) {

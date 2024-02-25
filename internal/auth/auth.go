@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,43 +13,32 @@ import (
 )
 
 const (
-	JWT_MAX_HOURS_INT = 24 * 60 * 60 
-	JWT_MAX_HOURS_STRING = "86400s"
-	JWT_ISSUER = "chirpy"
+	ACCESS_JWT_ISSUER = "chirpy-access"
+	ACCESS_JWT_DURATION = 60 * 60
+	REFRESH_JWT_ISSUER = "chirpy-refresh"
+	REFRESH_JWT_DURATION = 60 * 24 * 60 * 60 
 	TOKEN_PREFIX = "Bearer "
 	JWT_SECRET = "JWT_SECRET"
 )
 
 
-func GenerateJWToken(secret string, jwtDuration *int, userId int) (string, error) {
-	expiresIn, err := time.ParseDuration(JWT_MAX_HOURS_STRING)
-	if err != nil {
-		return "", err
+func GenerateJWToken(secret, issuer string, userId int) (string, error) {
+	if issuer == ACCESS_JWT_ISSUER {
+		return signToken(userId, ACCESS_JWT_ISSUER, secret, ACCESS_JWT_DURATION)
 	}
+	return signToken(userId, REFRESH_JWT_ISSUER, secret, REFRESH_JWT_DURATION)
+}
 
-	if jwtDuration != nil {
-		if *jwtDuration < JWT_MAX_HOURS_INT {
-			s := fmt.Sprintf("%ds", *jwtDuration)
-			if expiresIn, err = time.ParseDuration(s); err != nil {
-				return "", err
-			}
-		}
-	}
-
+func signToken(userId int, issuer, secret string, expiresIn int) (string, error) {
 	claims := jwt.RegisteredClaims{
-		Issuer: JWT_ISSUER,
+		Issuer: issuer,
 		IssuedAt: jwt.NewNumericDate(time.Now().Local()),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiresIn)),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Second * time.Duration(expiresIn))),
 		Subject: strconv.Itoa(userId),
 	}
 
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	st, err := t.SignedString([]byte(secret))
-	if err != nil {
-		return "", err
-	}
-
-	return st, nil
+	return t.SignedString([]byte(secret))
 }
 
 func GetBearerToken(r *http.Request) (string, error) {
@@ -62,20 +50,15 @@ func GetBearerToken(r *http.Request) (string, error) {
 	return t, nil
 }
 
-func ValidateJWToken(t string) (string, error) {
+func ValidateJWToken(t string) (jwt.Claims, error) {
 	token, err := jwt.ParseWithClaims(t, jwt.MapClaims{}, func(tkn *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv(JWT_SECRET)), nil
 	})	
 	if err != nil {
-		return "", errors.New("Invalid JSON Web Token")
+		return jwt.MapClaims{}, errors.New("Invalid JSON Web Token")
 	}
 
-	userId, err := token.Claims.GetSubject()
-	if err != nil {
-		return "", errors.New("Authorization error. Please, login.") 
-	}
-
-	return userId, nil
+	return token.Claims, nil
 }
 
 func HashPassword(pw string) (string, error)  {
@@ -87,9 +70,6 @@ func HashPassword(pw string) (string, error)  {
 } 
 
 func CompareHashToPassword(h, pw string ) error {
-	if err := bcrypt.CompareHashAndPassword([]byte(h), []byte(pw)); err != nil {
-		return err
-	}
-	return nil
+	return bcrypt.CompareHashAndPassword([]byte(h), []byte(pw))
 }
 

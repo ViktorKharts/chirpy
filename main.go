@@ -45,6 +45,8 @@ func main() {
 	apiRouter.Get("/healthz", readinessHandler)
 	apiRouter.Get("/reset", cfg.resetMetricsHandler)
 	apiRouter.Post("/login", cfg.loginHandler)
+	apiRouter.Post("/refresh", cfg.refreshTokenHandler)
+	apiRouter.Post("/revoke", cfg.revokeTokenHandler)
 
 	// /api/chirps
 	apiRouter.Get("/chirps", cfg.getChirpsHandler)
