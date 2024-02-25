@@ -8,12 +8,13 @@ import (
 	"github.com/ViktorKharts/chirpy/internal/auth"
 )
 
-type requestPayload struct {
-	Email string `json:"email"`
-	Password string `json:"password"`
-}
-
 func (c *apiConfig) updateUsersHandler(w http.ResponseWriter, r *http.Request) {
+	type requestPayload struct {
+		Email string `json:"email"`
+		Password string `json:"password"`
+		IsChirpyRed bool `json:"is_chirpy_red"`
+	}
+
 	t, err := auth.GetBearerToken(r)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, err.Error())
@@ -63,7 +64,7 @@ func (c *apiConfig) updateUsersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := c.DB.UpdateUser(userIdInt, params.Email, string(hashedPassword))
+	user, err := c.DB.UpdateUser(userIdInt, params.Email, string(hashedPassword), params.IsChirpyRed)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to update user")
 		return
@@ -72,5 +73,6 @@ func (c *apiConfig) updateUsersHandler(w http.ResponseWriter, r *http.Request) {
 	respondWithJson(w, http.StatusOK, User{
 		ID: user.ID,
 		Email: user.Email,
+		IsChirpyRed: user.IsChirpyRed,
 	})
 }

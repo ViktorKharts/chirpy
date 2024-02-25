@@ -24,7 +24,7 @@ func (c *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	decoder.Decode(&params)
 
-	user, err := c.DB.GetUser(params.Email)	
+	user, err := c.DB.GetUserByEmail(params.Email)	
 	if err != nil {
 		respondWithError(w, http.StatusNotFound, err.Error())
 		return
@@ -51,6 +51,7 @@ func (c *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 		User: User{
 			ID: user.ID,
 			Email: user.Email,
+			IsChirpyRed: user.IsChirpyRed,
 		},
 		AccessToken: signedAccessToken,
 		RefreshToken: signedRefreshToken,

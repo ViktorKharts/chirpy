@@ -6,7 +6,7 @@ type User struct {
 	ID int `json:"id"`
 	Email string `json:"email"`
 	Password string `json:"password"`
-	RefreshToken string `json:"refresh_token"`
+	IsChirpyRed bool `json:"is_chirpy_red"`
 }
 
 func (db *DB) CreateUser(email, password string) (User, error) {
@@ -52,7 +52,7 @@ func (db *DB) GetUsers() ([]User, error) {
 	return users, nil
 } 
 
-func (db *DB) GetUser(email string) (User, error) {
+func (db *DB) GetUserByEmail(email string) (User, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return User{}, err
@@ -74,7 +74,21 @@ func (db *DB) GetUser(email string) (User, error) {
 	return user, nil
 }
 
-func (db *DB) UpdateUser(id int, email, password string) (User, error) {
+func (db *DB) GetUserById(id int) (User, error) {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return User{}, err
+	}
+
+	user, ok := dbStructure.Users[id]	
+	if !ok {
+		return User{}, os.ErrNotExist 
+	}
+
+	return user, nil
+}
+
+func (db *DB) UpdateUser(id int, email, password string, isRed bool) (User, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return User{}, err
@@ -87,6 +101,7 @@ func (db *DB) UpdateUser(id int, email, password string) (User, error) {
 
 	user.Email = email
 	user.Password = password
+	user.IsChirpyRed = isRed
 	dbStructure.Users[id] = user
 
 	err = db.writeDB(dbStructure)
