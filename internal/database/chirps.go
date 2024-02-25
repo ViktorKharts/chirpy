@@ -1,6 +1,9 @@
 package database
 
-import "os"
+import (
+	"maps"
+	"os"
+)
 
 type Chirp struct {
 	ID   int `json:"id"`	
@@ -58,5 +61,27 @@ func (db *DB) GetChirp(id int) (Chirp, error) {
 	}
 
 	return chirp, nil
+}
+
+func (db *DB) DeleteChirp(chirpID, userID int) error {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return os.ErrDeadlineExceeded
+	}
+
+	chirp, ok := dbStructure.Chirps[chirpID]
+	if !ok {
+		return os.ErrNotExist
+	}
+
+	if chirp.AuthorID != userID {
+		return os.ErrPermission
+	}
+
+	maps.DeleteFunc(dbStructure.Chirps, func(chiID int, chirp Chirp) bool {
+		return chiID == chirpID && chirp.AuthorID == userID
+	}) 
+
+	return nil
 }
 
