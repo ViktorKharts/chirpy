@@ -4,15 +4,7 @@ import (
 	"encoding/json"
 	"strconv"
 	"net/http"
-	"strings"
-	"os"
-
-	"github.com/golang-jwt/jwt/v5"
-	"golang.org/x/crypto/bcrypt"
-)
-
-const (
-	TOKEN_PREFIX = "Bearer "
+	"github.com/ViktorKharts/chirpy/internal/auth"
 )
 
 type requestPayload struct {
@@ -21,25 +13,15 @@ type requestPayload struct {
 }
 
 func (c *apiConfig) updateUsersHandler(w http.ResponseWriter, r *http.Request) {
-	t := r.Header.Get("Authorization")
-	t, ok := strings.CutPrefix(t, TOKEN_PREFIX) 
-	if !ok {
-		respondWithError(w, http.StatusNotFound, "No bearer token found")
+	t, err := auth.GetBearerToken(r)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
 
-	claims := jwt.MapClaims{}
-	token, err := jwt.ParseWithClaims(t, claims, func(tkn *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv(JWT_SECRET)), nil
-	})	
+	userId, err := auth.ValidateJWToken(t)
 	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "Invalid JSON Web Token")
-		return
-	}
-
-	userId, err := token.Claims.GetSubject()
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Authorization error. Please, login.")
+		respondWithError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
 
@@ -51,7 +33,7 @@ func (c *apiConfig) updateUsersHandler(w http.ResponseWriter, r *http.Request) {
 		return
     	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(params.Password), 8)
+	hashedPassword, err := auth.HashPassword(params.Password)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
