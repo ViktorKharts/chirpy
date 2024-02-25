@@ -18,6 +18,7 @@ const (
 	REFRESH_JWT_ISSUER = "chirpy-refresh"
 	REFRESH_JWT_DURATION = 60 * 24 * 60 * 60 
 	TOKEN_PREFIX = "Bearer "
+	POLKA_API_PREFIX = "ApiKey "
 	JWT_SECRET = "JWT_SECRET"
 )
 
@@ -48,6 +49,15 @@ func GetBearerToken(r *http.Request) (string, error) {
 	}
 	t, _ := strings.CutPrefix(h, TOKEN_PREFIX) 
 	return t, nil
+}
+
+func GetPolkaApiKey(r *http.Request) (string, error) {
+	h := r.Header.Get("Authorization")
+	if h == "" {
+		return "", errors.New("No Authorization header included")
+	}
+	k, _ := strings.CutPrefix(h, POLKA_API_PREFIX) 
+	return k, nil
 }
 
 func ValidateJWToken(t string) (jwt.Claims, error) {

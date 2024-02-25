@@ -1,14 +1,17 @@
 package main
 
 import (
-	"net/http"
 	"encoding/json"
+	"net/http"
 	"os"
+
+	"github.com/ViktorKharts/chirpy/internal/auth"
 )
 
 const (
 	USER_UPGRADED = "user.upgraded"
 	UPGRADED_STATUS = true
+	POLKA_SECRET="POLKA_SECRET"
 )
 
 func (c *apiConfig) updatePolkaHandler(w http.ResponseWriter, r *http.Request) {
@@ -19,9 +22,20 @@ func (c *apiConfig) updatePolkaHandler(w http.ResponseWriter, r *http.Request) {
 		} `json:"data"`
 	}
 
+	apiKey, err := auth.GetPolkaApiKey(r)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Failed to retrieve Authorization header")
+		return
+	}
+
+	if apiKey != os.Getenv(POLKA_SECRET) {
+		respondWithError(w, http.StatusUnauthorized, "Failed to retrieve Authorization header")
+		return
+	}
+
 	d := json.NewDecoder(r.Body)
 	params := requestPayload{} 
-	err := d.Decode(&params)
+	err = d.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to read request body")
 		return
