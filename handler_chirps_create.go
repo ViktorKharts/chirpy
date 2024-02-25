@@ -1,10 +1,13 @@
 package main
 
 import (
-	"net/http"
 	"encoding/json"
-	"strings"
+	"net/http"
+	"strconv"
 	"slices"
+	"strings"
+
+	"github.com/ViktorKharts/chirpy/internal/auth"
 )
 
 func (c *apiConfig) createChirpsHandler(w http.ResponseWriter, r *http.Request) {
@@ -12,9 +15,33 @@ func (c *apiConfig) createChirpsHandler(w http.ResponseWriter, r *http.Request) 
 		Body string `json:"body"`
     	}
 
+	t, err := auth.GetBearerToken(r)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Not authorized")
+		return 
+	}
+
+	validatedToken, err := auth.ValidateJWToken(t)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Not authorized")
+		return 
+	}
+
+	authorId, err := validatedToken.GetSubject()
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Not authorized")
+		return 
+	}
+
+	authorIdInt, err := strconv.Atoi(authorId) 
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, err.Error())
+		return 
+	}
+
     	decoder := json.NewDecoder(r.Body)
     	params := requestPayload{}
-    	err := decoder.Decode(&params)
+    	err = decoder.Decode(&params)
     	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -26,7 +53,7 @@ func (c *apiConfig) createChirpsHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	chirp, err := c.DB.CreateChirp(params.Body)
+	chirp, err := c.DB.CreateChirp(params.Body, authorIdInt)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
