@@ -10,6 +10,7 @@ import (
 
 func (c *apiConfig) getChirpsHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.URL.Query().Get("author_id")
+	sortParam := r.URL.Query().Get("sort")
 
 	dbChirps, err := c.DB.GetChirps()
 	if err != nil {
@@ -34,6 +35,12 @@ func (c *apiConfig) getChirpsHandler(w http.ResponseWriter, r *http.Request) {
 	sort.Slice(chirps, func(i, j int) bool {
 		return chirps[i].ID < chirps[j].ID
 	})
+
+	if sortParam == "desc" {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].ID > chirps[j].ID
+		})
+	}
 
 	respondWithJson(w, http.StatusOK, chirps)
 }
